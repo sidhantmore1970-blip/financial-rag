@@ -1,57 +1,117 @@
 # Financial Document Management API
 
-FastAPI project with RAG (semantic search) for financial documents.
+FastAPI + SQLite + Gemini AI + FAISS — financial document management with semantic RAG search.
 
-## Setup
 
-```bash
+
+## Quick Start
+
+
+### 2. Install dependencies
+
+python -m venv venv
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
+
+### 3. Configure environment
+
 ```
 
-Create a `.env` file and add your keys:
-```
-GEMINI_API_KEY=your_key
-SECRET_KEY=any_random_string
+# create .env — add your GEMINI_API_KEY and SECRET_KEY
 ```
 
-## Run
+Get a free Gemini API key at: https://aistudio.google.com/app/apikey
 
-```bash
-cd myapp
-uvicorn main:app --reload
-```
-
-## Seed default roles
+### 4. Create default roles
 
 ```bash
 python seed_roles.py
 ```
 
-## API Docs
+### 5. Run the server
 
-Open http://127.0.0.1:8000/docs
+```bash
+uvicorn main:app --reload
+```
 
-## Endpoints
+Open http://localhost:8000/docs for the interactive Swagger UI.
 
-### Auth
-- POST /auth/register
-- POST /auth/login
+---
+
+## API Reference
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register new user |
+| POST | `/auth/login` | Login → JWT token |
 
 ### Documents
-- POST /documents/upload
-- GET /documents
-- GET /documents/{document_id}
-- DELETE /documents/{document_id}
-- GET /documents/search
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/documents/upload` | Upload document (multipart/form-data) |
+| GET | `/documents` | List all documents |
+| GET | `/documents/{id}` | Get document metadata |
+| DELETE | `/documents/{id}` | Delete document + embeddings |
+| GET | `/documents/search` | Filter by title/company/type |
 
 ### Roles & Users
-- POST /roles/create
-- POST /users/assign-role
-- GET /users/{id}/roles
-- GET /users/{id}/permissions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/roles/create` | Create a role (Admin only) |
+| POST | `/users/assign-role` | Assign role to user (Admin only) |
+| GET | `/users/{id}/roles` | List user's roles |
+| GET | `/users/{id}/permissions` | List user's merged permissions |
 
-### RAG
-- POST /rag/index-document
-- DELETE /rag/remove-document/{id}
-- POST /rag/search
-- GET /rag/context/{document_id}
+### RAG / Semantic Search
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/rag/index-document?document_id=1` | Index a document into FAISS |
+| DELETE | `/rag/remove-document/{id}` | Remove document embeddings |
+| POST | `/rag/search` | Semantic search with reranking |
+| GET | `/rag/context/{id}` | Get stored chunks for a document |
+
+---
+
+## Permissions Model
+
+| Role | Permissions |
+|------|-------------|
+| Admin | `full_access` (everything) |
+| Financial Analyst | `upload`, `view`, `edit` |
+| Auditor | `view` |
+| Client | `view` |
+
+---
+
+## RAG Pipeline
+
+```
+Document File
+    ↓
+Text Extraction (PyMuPDF for PDF, UTF-8 for .txt)
+    ↓
+Chunking (LangChain RecursiveCharacterTextSplitter, 800 chars, 100 overlap)
+    ↓
+Gemini Embeddings (models/embedding-001, 768-dim, L2-normalised)
+    ↓
+FAISS IndexFlatIP (cosine similarity via inner product on normalised vectors)
+    ↓  [persisted to vector_store/index.faiss + metadata.pkl]
+    ↓
+User Query → Gemini Embedding → FAISS top-20
+    ↓
+Gemini Reranker (gemini-1.5-flash scores each chunk 0-10)
+    ↓
+Top-5 Most Relevant Chunks
+```
+
+---
+
+## Example: Semantic Search
+
+```bash
+curl -X POST http://localhost:8000/rag/search \
+  -H "Authorization: Bearer <your_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "financial risk related to high debt ratio", "top_k": 5}'
+```
