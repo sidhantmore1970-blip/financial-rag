@@ -105,13 +105,3 @@ Gemini Reranker (gemini-1.5-flash scores each chunk 0-10)
 Top-5 Most Relevant Chunks
 ```
 
----
-
-## Example: Semantic Search
-
-```bash
-curl -X POST http://localhost:8000/rag/search \
-  -H "Authorization: Bearer <your_token>" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "financial risk related to high debt ratio", "top_k": 5}'
-```
