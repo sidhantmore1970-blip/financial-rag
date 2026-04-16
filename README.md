@@ -89,18 +89,17 @@ Open http://localhost:8000/docs for the interactive Swagger UI.
 ```
 Document File
     ↓
-Text Extraction (PyMuPDF for PDF, UTF-8 for .txt)
+Text Extraction 
     ↓
-Chunking (LangChain RecursiveCharacterTextSplitter, 800 chars, 100 overlap)
+Chunking 
     ↓
-Gemini Embeddings (models/embedding-001, 768-dim, L2-normalised)
+Gemini Embeddings 
     ↓
-FAISS IndexFlatIP (cosine similarity via inner product on normalised vectors)
-    ↓  [persisted to vector_store/index.faiss + metadata.pkl]
+FAISS IndexFlatIP 
     ↓
-User Query → Gemini Embedding → FAISS top-20
+User Query → Gemini Embedding → FAISS 
     ↓
-Gemini Reranker (gemini-1.5-flash scores each chunk 0-10)
+Gemini Reranker 
     ↓
 Top-5 Most Relevant Chunks
 ```
